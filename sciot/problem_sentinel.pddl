@@ -1,0 +1,10 @@
+(define (problem sentinel-problem)
+  (:domain sentinel-car)
+  (:objects car1 - vehicle)
+  (:init
+        (parked car1)
+    (damage-signal car1)
+    (cabin-too-hot car1)
+  )
+  (:goal (vehicle-secure car1))
+)
