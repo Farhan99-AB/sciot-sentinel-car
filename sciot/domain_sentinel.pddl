@@ -21,11 +21,13 @@
     (alarm-active ?v - vehicle)
     (evidence-captured ?v - vehicle)
     (cooling-engaged ?v - vehicle)
+    (windows-down ?v - vehicle)
     (alert-sent ?v - vehicle)
 
     ; Goals
     (vehicle-secure ?v - vehicle)
     (occupant-safe ?v - vehicle)
+    (cabin-secure ?v - vehicle)      ; hot cabin, no occupant → alert-only goal
   )
 
   ; ── DAMAGE SCENARIO ─────────────────────────────────────────
@@ -70,6 +72,13 @@
     :effect (cooling-engaged ?v)
   )
 
+  ; Step 2a-ii: Temperature risk → roll the windows down to vent the cabin
+  (:action roll-down-windows
+    :parameters (?v - vehicle)
+    :precondition (and (occupant-at-risk ?v) (cabin-too-hot ?v))
+    :effect (windows-down ?v)
+  )
+
   ; Step 2b: UV risk → send UV alert directly  
   (:action send-uv-warning
     :parameters (?v - vehicle)
@@ -77,17 +86,31 @@
     :effect (alert-sent ?v)
   )
 
-  ; Step 3: Cooling engaged → occupant safe
+  ; Step 3: Cooling engaged AND windows down → occupant safe
   (:action confirm-occupant-safe
     :parameters (?v - vehicle)
-    :precondition (and (occupant-at-risk ?v) (cooling-engaged ?v))
+    :precondition (and (occupant-at-risk ?v) (cooling-engaged ?v) (windows-down ?v))
     :effect (occupant-safe ?v)
   )
 
-  ; Step 3 alt: UV alert sent → occupant safe
+  ; Step 3 alt: UV alert sent → occupant safe.
+  ; NOTE: gated on (cabin-uv-high) on purpose. Without it, the planner would use
+  ; this + the alert-only action as a cheap 3-step shortcut for a HEAT occupant
+  ; and skip cooling/windows. Keeping it UV-specific forces the heat case through
+  ; engage-cooling + roll-down-windows.
   (:action confirm-safe-after-uv-alert
     :parameters (?v - vehicle)
-    :precondition (and (occupant-at-risk ?v) (alert-sent ?v))
+    :precondition (and (occupant-at-risk ?v) (cabin-uv-high ?v) (alert-sent ?v))
     :effect (occupant-safe ?v)
+  )
+
+  ; ── UNATTENDED HOT CABIN (no occupant) ──────────────────────
+  ; A hot cabin with nobody inside is still worth flagging. There is no one to
+  ; cool for, so the plan is alert-only — this is the path that previously had
+  ; no goal to satisfy and left the planner spinning.
+  (:action send-cabin-heat-alert
+    :parameters (?v - vehicle)
+    :precondition (and (parked ?v) (cabin-too-hot ?v))
+    :effect (and (alert-sent ?v) (cabin-secure ?v))
   )
 )

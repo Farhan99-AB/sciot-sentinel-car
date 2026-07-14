@@ -350,6 +350,8 @@ if not in_alert:
     st.success("🟢 **All systems normal** — vehicle secure, environment safe.")
 elif damage or "damage" in scenario:
     st.error("🚨 **Damage detected** — alarm active. Press **Disarm / reset** to stand down.")
+elif "high_cabin_temp" in scenario:
+    st.warning("🌡️ **High cabin temperature** — no occupant detected, alert sent.")
 elif too_hot or "heatstroke" in scenario:
     st.warning("🌡️ **Heatstroke risk** — occupant inside, cooling relay engaged until cabin cools.")
 elif uv_high or "uv" in scenario:
@@ -375,9 +377,10 @@ elif st.session_state.plan:
 
     with plan_col:
         label = {
-            "damage_or_intrusion": "🚨 Damage response",
-            "heatstroke_risk":     "🌡️ Heatstroke response",
-            "uv_risk":             "☀️ UV response",
+            "damage_or_intrusion":  "🚨 Damage response",
+            "heatstroke_risk":      "🌡️ Heatstroke response",
+            "high_cabin_temp_alert":"🌡️ High cabin temp alert",
+            "uv_risk":              "☀️ UV response",
         }.get(scenario, "Response")
         st.markdown(f"**{label} — plan progress**")
 
@@ -397,7 +400,9 @@ elif st.session_state.plan:
 
         if status == "complete":
             # The plan has run but the response stays LATCHED (actuators on).
-            if "heatstroke" in scenario:
+            if "high_cabin_temp" in scenario:
+                st.warning("🌡️ High cabin temperature alert sent — holding until the cabin cools down.")
+            elif "heatstroke" in scenario:
                 st.warning("🌡️ Cooling relay engaged & alert sent — holding until the cabin cools down.")
             elif "uv" in scenario:
                 st.warning("☀️ UV warning sent — holding until UV drops.")
@@ -481,7 +486,9 @@ with col_alerts:
     st.markdown("#### 🚨 Alert log")
     if st.session_state.alerts:
         for a in st.session_state.alerts[:8]:
-            evt = a.get("event", "unknown").replace("_", " ").title()
+            # Prefer the human-phrased message (e.g. "High cabin temp and OCCUPANT
+            # INSIDE!"); fall back to the machine event key for older alerts.
+            evt = a.get("message") or a.get("event", "unknown").replace("_", " ").title()
             ts  = str(a.get("timestamp", ""))[:19]
             sev = a.get("severity", "MEDIUM")
             icon = "🔴" if sev == "HIGH" else "🟡"

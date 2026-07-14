@@ -1,202 +1,3 @@
-# # main_coordinator.py — Fixed Persistent Alerts & Cooldown State
-
-# Working code fall back here  
-
-
-
-# import paho.mqtt.client as mqtt
-# import json
-# import time
-# from datetime import datetime
-# from sensor_config import *
-# from pddl_generator import generate_problem
-# from planner_runner import run_planner
-# from actuator_controller import execute_action
-# from incident_logger import log_incident
-
-# SYSTEM_STATES = ["IDLE", "TRIGGERED", "RESPONDING", "COOLING_DOWN"]
-# system_fsm = {"state": "IDLE", "entered_at": 0}
-
-# def transition(new_state: str, mqtt_client):
-#     global system_fsm
-#     if system_fsm["state"] == new_state: return
-#     system_fsm["state"] = new_state
-#     system_fsm["entered_at"] = time.time()
-#     mqtt_client.publish("sentinel/fsm_state", json.dumps({"state": new_state}))
-#     print(f"[FSM] ➡️ {new_state}")
-
-# sensor_state = {
-#     "damage_signal": False, "motion_outside": False, "occupant_detected": False,
-#     "occupant_confirmed_by": [], "cabin_too_hot": False, "cabin_uv_high": False,
-#     "temperature_cabin": None, "illuminance_cabin": None
-# }
-# last_plan_time = 0
-
-# def     trigger_planning(client):
-#     global last_plan_time, sensor_state
-#     if (time.time() - last_plan_time) < 15: 
-#         print("[Coordinator] ⏳ Cooldown active (15s), ignoring trigger.")
-#         return
-    
-#     last_plan_time = time.time()
-#     transition("RESPONDING", client)
-
-#     generate_problem(
-#         damage_signal=sensor_state["damage_signal"], motion_outside=sensor_state["motion_outside"],
-#         occupant_detected=sensor_state["occupant_detected"], cabin_too_hot=sensor_state["cabin_too_hot"],
-#         cabin_uv_high=sensor_state["cabin_uv_high"]
-#     )
-#     plan = run_planner()
-#     if not plan: 
-#         transition("IDLE", client)
-#         return
-
-#     if sensor_state["damage_signal"] or sensor_state["motion_outside"]: scenario = "damage_or_intrusion"
-#     elif sensor_state["cabin_too_hot"]: scenario = "heatstroke_risk"
-#     elif sensor_state["cabin_uv_high"]: scenario = "uv_risk"
-#     else: scenario = "general_alert"
-
-#     log_incident(scenario, sensor_state, plan)
-#     # client.publish("sentinel/plan", json.dumps({"plan": plan, "scenario": scenario, "timestamp": str(datetime.now())}))
-#     client.publish("sentinel/alert", json.dumps({"event": f"Started Plan: {scenario}"}))
-
-#     for i, action in enumerate(plan, 1):
-#         # client.publish("sentinel/current_step", json.dumps({"step": i, "total": len(plan), "action": action, "scenario": scenario, "status": "executing"}))
-#         client.publish("sentinel/alert", json.dumps({"event": f"Step {i}: {action.replace('-', ' ').title()}"}))
-#         execute_action(action, client, sensor_state.copy())
-#         time.sleep(1.5)
-
-#     # client.publish("sentinel/current_step", json.dumps({"step": len(plan), "total": len(plan), "action": plan[-1], "scenario": scenario, "status": "complete"}))
-#     client.publish("sentinel/alert", json.dumps({"event": "Plan Complete"}))
-    
-#     # --- FIX 1: Clean down state fields before changing state ---
-#     sensor_state["damage_signal"] = False
-#     sensor_state["motion_outside"] = False
-    
-#     client.publish("sentinel/state", json.dumps(sensor_state))
-#     transition("COOLING_DOWN", client)
-
-# def on_message(client, userdata, message):
-#     global sensor_state
-#     topic, payload_str = message.topic, message.payload.decode("utf-8")
-
-#     # 1. SYSTEM COMMANDS: Always process these immediately, bypass all filters
-#     if topic == TOPIC_DISARM:
-#         print("🔒 [SYSTEM] Disarm command received.")
-#         sensor_state["damage_signal"] = False
-#         sensor_state["motion_outside"] = False
-#         transition("IDLE", client)
-#         client.publish("sentinel/state", json.dumps(sensor_state))
-#         return
-    
-#     elif topic == "sentinel/command/poll":
-#         print("🔍 [SYSTEM] Dashboard requested state sync.")
-#         client.publish("sentinel/state", json.dumps(sensor_state), retain=True)
-#         return
-
-#     # 3. IGNORE NOISE: Filter out non-data topics
-#     if any(k in topic for k in ["configuration", "version", "manufacturer", "wake_up", "lastActive", "status", "battery"]):
-#         return
-    
-#     # 4. PARSE SENSOR DATA
-#     try:
-#         data = json.loads(payload_str)
-#         value = data.get("value")
-#         if value is None: return
-#     except: return
-
-#     changed = False
-
-#     # 5. PROCESS TRIGGERS
-#     if topic == TOPIC_CAR_MOTION and value == MOTION_ACTIVE:
-#         if not sensor_state["motion_outside"]:
-#             sensor_state["motion_outside"] = True
-#             sensor_state["damage_signal"] = True 
-#             transition("TRIGGERED", client)
-#             changed = True
-            
-#     elif topic == TOPIC_BINARY_ANY:
-#         if value is True:
-#             sensor_state["damage_signal"] = True
-#             transition("TRIGGERED", client)
-#         else:
-#             sensor_state["damage_signal"] = False  # Allows the UI to show 'Clear'
-#         changed = True
-            
-#     elif topic == TOPIC_CAR_TAMPER and value == TAMPER_ACTIVE:
-#         if not sensor_state["damage_signal"]:
-#             print("⚠️ [SENSOR] Tamper detected!")
-#             sensor_state["damage_signal"] = True
-#             transition("TRIGGERED", client)
-#             changed = True
-
-#     elif topic == TOPIC_CAR_TEMP:
-#         sensor_state["temperature_cabin"] = value
-#         new_hot = (value >= TEMP_HEATSTROKE_C)
-        
-#         # Always update the status
-#         if new_hot != sensor_state["cabin_too_hot"]:
-#             sensor_state["cabin_too_hot"] = new_hot
-#             changed = True
-            
-#         # Check if we should trigger planning
-#         # We need both: cabin is too hot AND an occupant is detected
-#         if new_hot and sensor_state["occupant_detected"]:
-#             print(f"🌡️  [CABIN] HEATSTROKE RISK DETECTED: {value}°C")
-#             trigger_planning(client) # Force the trigger immediately
-#         elif not new_hot:
-#             print(f"❄️  [CABIN] Temp normalized: {value}°C")
-#             if not sensor_state["damage_signal"]:
-#                 transition("IDLE", client)
-
-#     elif topic == TOPIC_CAR_MOTION:
-#         pir_active = (value == MOTION_ACTIVE)
-#         if pir_active:
-#             if "pir" not in sensor_state["occupant_confirmed_by"]: sensor_state["occupant_confirmed_by"].append("pir")
-#         else:
-#             if "pir" in sensor_state["occupant_confirmed_by"]: sensor_state["occupant_confirmed_by"].remove("pir")
-#         if _update_occupant_state(): changed = True
-
-#     elif topic == TOPIC_CAR_LIGHT:
-#         sensor_state["illuminance_cabin"] = value
-#         if value > ILLUMINANCE_OCCUPIED:
-#             if "illuminance" not in sensor_state["occupant_confirmed_by"]: sensor_state["occupant_confirmed_by"].append("illuminance")
-#         else:
-#             if "illuminance" in sensor_state["occupant_confirmed_by"]: sensor_state["occupant_confirmed_by"].remove("illuminance")
-#         if _update_occupant_state(): changed = True
-
-#     # --- FIX 2: Prevent triggers when system is intentionally recovering ---
-#     if system_fsm["state"] == "COOLING_DOWN":
-#         if (time.time() - system_fsm["entered_at"]) > 15:
-#             transition("IDLE", client)
-#         else:
-#             return # Block updates from evaluating while inside the active 15s window
-
-#     # 6. PUBLISH STATE & TRIGGER PLANNING
-#     if changed: 
-#         client.publish("sentinel/state", json.dumps(sensor_state), retain=True)
-#         if sensor_state["damage_signal"] or (sensor_state["cabin_too_hot"] and sensor_state["occupant_detected"]):
-#             trigger_planning(client)
-
-# def _update_occupant_state():
-#     confirmed = len(sensor_state["occupant_confirmed_by"]) > 0
-#     if confirmed != sensor_state["occupant_detected"]:
-#         sensor_state["occupant_detected"] = confirmed
-#         if confirmed and sensor_state["cabin_too_hot"] and system_fsm["state"] == "IDLE": 
-#             transition("TRIGGERED", client)
-#         return True
-#     return False
-
-# def on_connect(client, userdata, flags, rc, props):
-#     client.subscribe("zwave/#"); client.subscribe("sentinel/command/#")
-#     print("✅ [Coordinator] Armed and listening...")
-
-# if __name__ == "__main__":
-#     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, "SentinelCoordinator")
-#     client.on_connect = on_connect; client.on_message = on_message
-#     client.connect(MQTT_HOST, MQTT_PORT, 60); client.loop_forever()
-
-
 # main_coordinator.py — v11
 #
 # SENSOR MAPPING (single Aeon MultiSensor 6, node name "car"):
@@ -301,10 +102,11 @@ cooling_watch = {"active": False, "engaged_at": 0}
 COOLING_FAILSAFE_SECONDS = 30
 
 
-def trigger_planning(client):
-    """Runs one sense -> plan -> act cycle. Respects the cooldown window."""
+def trigger_planning(client, force: bool = False):
+    """Runs one sense -> plan -> act cycle. Respects the cooldown window unless
+    `force` is set (used when escalating an already-latched response)."""
     global last_plan_time
-    if (time.time() - last_plan_time) < PLAN_COOLDOWN:
+    if not force and (time.time() - last_plan_time) < PLAN_COOLDOWN:
         print("[Coordinator] Cooldown active, skipping re-plan")
         return
     last_plan_time = time.time()
@@ -333,7 +135,8 @@ def trigger_planning(client):
     if sensor_state["damage_signal"]:
         scenario = "damage_or_intrusion"
     elif sensor_state["cabin_too_hot"]:
-        scenario = "heatstroke_risk"
+        # Distinguish an at-risk occupant from an unattended hot cabin (alert-only).
+        scenario = "heatstroke_risk" if sensor_state["occupant_detected"] else "high_cabin_temp_alert"
     elif sensor_state["cabin_uv_high"]:
         scenario = "uv_risk"
     else:
@@ -492,11 +295,29 @@ def on_message(client, userdata, message):
         if system_fsm["state"] in ("IDLE", "TRIGGERED"):
             needs_plan = (
                 sensor_state["damage_signal"] or
-                (sensor_state["cabin_too_hot"] and sensor_state["occupant_detected"]) or
+                sensor_state["cabin_too_hot"] or   # hot cabin alerts even with no occupant
                 (sensor_state["cabin_uv_high"] and sensor_state["occupant_detected"])
             )
             if needs_plan:
                 trigger_planning(client)
+
+        # ── ESCALATION ───────────────────────────────────────────
+        # A hot cabin can trigger an alert-only response BEFORE the occupant is
+        # detected (the temperature report can arrive first). If an occupant then
+        # appears while that alert is latched — and cooling isn't already running —
+        # upgrade to the full cooling + windows plan. This closes the race that
+        # otherwise leaves a trapped occupant with only an alert and no cooling.
+        elif system_fsm["state"] == "RESPONDING":
+            escalate = (
+                sensor_state["cabin_too_hot"]
+                and sensor_state["occupant_detected"]
+                and not cooling_watch["active"]        # cooling not engaged yet
+                and not sensor_state["damage_signal"]  # damage owns the response
+            )
+            if escalate:
+                print("[Coordinator] Occupant appeared during hot-cabin alert — "
+                      "escalating to cooling + windows")
+                trigger_planning(client, force=True)
 
     # AUTO-CLEAR: if a latched response's conditions have all resolved on their
     # own (e.g. the cabin cooled down, UV dropped), shut the actuators off and

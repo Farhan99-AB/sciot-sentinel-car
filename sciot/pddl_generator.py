@@ -13,10 +13,20 @@ def generate_problem(damage_signal, motion_outside, occupant_detected,
     if damage_signal or motion_outside:
         goals.append("(vehicle-secure car1)")
     if occupant_detected and (cabin_too_hot or cabin_uv_high):
+        # Someone is inside and at risk → full protective response.
         goals.append("(occupant-safe car1)")
-        
+        if cabin_too_hot:
+            # A hot cabin with an occupant MUST physically cool + vent, not just
+            # get an alert. Demanding these as goals stops the planner from taking
+            # a cheaper alert-only shortcut (e.g. via the UV path) when it's hot.
+            goals.append("(cooling-engaged car1)")
+            goals.append("(windows-down car1)")
+    elif cabin_too_hot:
+        # Hot cabin but nobody inside → alert-only goal (no cooling to run).
+        goals.append("(cabin-secure car1)")
+
     if not goals:
-        goals.append("(vehicle-secure car1)") 
+        goals.append("(vehicle-secure car1)")
 
     # Explicitly handle block wrapping
     if len(goals) > 1:
