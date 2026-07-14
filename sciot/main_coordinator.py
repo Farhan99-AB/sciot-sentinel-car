@@ -15,7 +15,9 @@ from datetime import datetime
 from sensor_config import *
 from pddl_generator import generate_problem
 from planner_runner import run_planner
-from actuator_controller import execute_action, trigger_failsafe_alarm, all_actuators_off
+from actuator_controller import (execute_action, trigger_failsafe_alarm,
+                                 all_actuators_off, engage_manual_cooling,
+                                 disengage_cooling)
 from incident_logger import log_incident
 
 # ── Finite State Machine ─────────────────────────────────────
@@ -41,6 +43,11 @@ sensor_state = {
     "cabin_uv_high":     False,   # set by Ultraviolet
     "temperature_cabin": None,
     "uv_index":          None,
+    "cooling_active":    False,   # cooling relay currently engaged (auto plan OR
+                                  # operator's manual button); drives the dashboard
+    "manual_cooling":    False,   # True only when cooling was started by the
+                                  # operator's comfort button (stays on until they
+                                  # turn it off / disarm — NOT auto-cleared by temp)
 }
 
 # The exact sensor topics this coordinator reacts to. Anything not in this set
@@ -89,6 +96,8 @@ def reset_to_idle(client, repoll: bool = True):
         "occupant_detected": False,
         "cabin_too_hot":     False,
         "cabin_uv_high":     False,
+        "cooling_active":    False,
+        "manual_cooling":    False,
     })
     transition("IDLE", client)
     client.publish("sentinel/state", json.dumps(sensor_state), retain=True)
@@ -100,6 +109,55 @@ def reset_to_idle(client, repoll: bool = True):
 # COOLING_FAILSAFE_SECONDS, escalate to the alarm as a backup safety net.
 cooling_watch = {"active": False, "engaged_at": 0}
 COOLING_FAILSAFE_SECONDS = 30
+
+
+def handle_manual_cooling(client):
+    """Operator-initiated cooling from the dashboard's always-available comfort
+    button. Engages the cooling relay ONLY (never the windows) so the driver can
+    pre-cool the cabin before getting in. This is deliberately INDEPENDENT of the
+    safety FSM: it does not force RESPONDING, and it is NOT auto-cleared when the
+    cabin cools — it stays on until the operator turns it off (stop_manual_cooling)
+    or disarms. That's what makes it a comfort control rather than an alarm.
+
+    Guardrails — the only situations where we refuse:
+      • damage active            → a security response owns the actuators
+      • occupant present AND hot → the automatic heat-safety plan is already
+                                    running cooling + windows; don't double-drive it
+      • cooling already engaged  → nothing to do
+    """
+    if sensor_state["damage_signal"]:
+        print("[Coordinator] Manual cooling ignored — damage response active")
+        return
+    if sensor_state["occupant_detected"] and sensor_state["cabin_too_hot"]:
+        print("[Coordinator] Manual cooling ignored — automatic heat plan already cooling")
+        return
+    if sensor_state["cooling_active"]:
+        print("[Coordinator] Manual cooling ignored — cooling already engaged")
+        return
+
+    print("[Coordinator] Operator engaged comfort cooling")
+    engage_manual_cooling(client, sensor_state.copy())
+    sensor_state["cooling_active"] = True
+    sensor_state["manual_cooling"] = True
+    cooling_watch["active"] = False   # comfort cooling — never escalate to the alarm
+    # NOTE: FSM is intentionally left untouched. If a heat/UV alert already put us
+    # in RESPONDING, that alert still auto-clears on its own; comfort cooling simply
+    # rides alongside it.
+    client.publish("sentinel/state", json.dumps(sensor_state), retain=True)
+
+
+def stop_manual_cooling(client):
+    """Turn off operator-initiated comfort cooling (dashboard 'Turn off' button).
+    Only stops MANUAL cooling — cooling that belongs to an automatic heat-safety
+    plan is left alone (that path clears itself when the cabin cools)."""
+    if not sensor_state["manual_cooling"]:
+        print("[Coordinator] Stop cooling ignored — no manual cooling active")
+        return
+    print("[Coordinator] Operator stopped comfort cooling")
+    disengage_cooling()
+    sensor_state["manual_cooling"] = False
+    sensor_state["cooling_active"] = False
+    client.publish("sentinel/state", json.dumps(sensor_state), retain=True)
 
 
 def trigger_planning(client, force: bool = False):
@@ -162,6 +220,7 @@ def trigger_planning(client, force: bool = False):
         execute_action(action, client, sensor_state.copy())
 
         if "engage-cooling" in action:
+            sensor_state["cooling_active"] = True
             cooling_watch["active"] = True
             cooling_watch["engaged_at"] = time.time()
             print(f"[Coordinator] Cooling engaged — watching for {COOLING_FAILSAFE_SECONDS}s")
@@ -207,6 +266,18 @@ def on_message(client, userdata, message):
     if topic == TOPIC_DISARM:
         print("[SYSTEM] Disarm/reset received — actuators off, clearing all state")
         reset_to_idle(client, repoll=True)
+        return
+
+    if topic == "sentinel/command/cooling":
+        try:
+            cmd = json.loads(payload_str).get("command", "engage_cooling")
+        except Exception:
+            cmd = "engage_cooling"
+        print(f"[SYSTEM] Comfort cooling command from dashboard: {cmd}")
+        if cmd == "stop_cooling":
+            stop_manual_cooling(client)
+        else:
+            handle_manual_cooling(client)
         return
 
     if topic == "sentinel/command/poll":
@@ -325,6 +396,8 @@ def on_message(client, userdata, message):
     if system_fsm["state"] == "RESPONDING" and not any_alarm_active():
         print("[Coordinator] Alarm conditions cleared — actuators off, back to IDLE")
         all_actuators_off()
+        sensor_state["cooling_active"] = False
+        sensor_state["manual_cooling"] = False
         transition("IDLE", client)
         client.publish("sentinel/state", json.dumps(sensor_state), retain=True)
 

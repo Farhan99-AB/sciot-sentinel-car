@@ -24,10 +24,14 @@ from camera_capture import capture_photo
 #               gateway address, it arrives as a REAL text message — this is
 #               the recommended way to prove SMS without any hardware.
 #   "twilio"  : send a real SMS through the Twilio API (needs a trial account)
+#   "ntfy"    : FREE push notification via ntfy.sh — no account. Just pick a
+#               topic name and install the ntfy app on your phone. (easiest)
+#   "telegram": FREE push via a Telegram bot — real phone notification, works on
+#               any carrier/country. Needs a bot token + your chat id.
 #
-# Set with:  export SENTINEL_NOTIFY=email   (Linux/Pi)
+# Set with:  export SENTINEL_NOTIFY=ntfy   (Linux/Pi)
 # ══════════════════════════════════════════════════════════════
-NOTIFY_METHOD = os.getenv("SENTINEL_NOTIFY", "email").lower()
+NOTIFY_METHOD = os.getenv("SENTINEL_NOTIFY", "console").lower()
 
 # --- Email / email-to-SMS settings (used when NOTIFY_METHOD == "email") ---
 # For Gmail: enable 2FA, then create an "App Password" and use it as SMTP_PASS.
@@ -53,7 +57,7 @@ TWILIO_TO    = os.getenv("TWILIO_TO", "")           # verified destination numbe
 # 2) install the ntfy app, subscribe to that topic
 # 3) export NTFY_TOPIC=sentinel-car-9f3k
 NTFY_SERVER = os.getenv("NTFY_SERVER", "https://ntfy.sh")
-NTFY_TOPIC  = os.getenv("NTFY_TOPIC", "sentinel_car_alert")
+NTFY_TOPIC  = os.getenv("NTFY_TOPIC", "")
 
 # --- Telegram settings (used when NOTIFY_METHOD == "telegram") — FREE ---
 # 1) message @BotFather → /newbot → copy the token
@@ -160,6 +164,31 @@ def _roll_down_windows():
         print("  🪟 Windows relay ON — rolling windows down to vent the cabin")
     else:
         print("  🪟 [SIM] Windows relay ON — rolling windows down to vent the cabin")
+
+
+def engage_manual_cooling(mqtt_client, sensor_state: dict):
+    """Operator-initiated cooling from the dashboard's comfort button. Engages the
+    cooling relay ONLY — deliberately never the windows (we don't open a car the
+    driver isn't in yet) — and posts an informational note to the dashboard. This
+    is a comfort action, so it is LOW severity, not an alarm, and it stays on until
+    the operator turns it off again (or the system is disarmed)."""
+    _trigger_cooling_local()
+    mqtt_client.publish("sentinel/alert", json.dumps({
+        "timestamp": str(datetime.now()),
+        "event": "manual_cooling_engaged",
+        "message": "Cooling system started remotely",
+        "sensor_state": sensor_state,
+        "severity": "LOW",
+    }))
+    print("  🌀 Manual cooling engaged by operator (windows stay up)")
+
+
+def disengage_cooling():
+    """Turn the cooling relay OFF without disturbing buzzer/windows. Used when the
+    operator stops comfort cooling from the dashboard (a full disarm still uses
+    all_actuators_off)."""
+    _relay_off("cooling")
+    print("  🌀 Cooling relay OFF (operator stopped comfort cooling)")
 
 
 def all_actuators_off():
@@ -325,7 +354,6 @@ def _notify_telegram(body: str):
         print("  📱 Telegram alert sent")
     except Exception as e:
         print(f"  📱 [ERROR] Telegram send failed: {e}")
-
 
 
 def _notify_twilio(body: str):

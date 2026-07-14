@@ -431,6 +431,42 @@ else:
 st.divider()
 
 # ══════════════════════════════════════════════════════════════
+# 1b) CABIN COOLING CONTROL — always available (comfort feature)
+# ──────────────────────────────────────────────────────────────
+# The driver can remotely pre-cool the cabin ANY time, so the car is already
+# pleasant to get into. Cooling here engages the cooling relay ONLY (windows stay
+# up) and stays on until the driver turns it off — it is NOT tied to any alarm.
+#   • If cooling is running as part of the automatic heat-safety plan
+#     (occupant inside + hot cabin), it is shown as automatic and can't be stopped
+#     from here — that's a safety response, not a comfort toggle.
+#   • During a damage/intrusion alarm the button is disabled (the security
+#     response owns the actuators).
+cooling_on     = bool(state.get("cooling_active"))
+manual_cooling = bool(state.get("manual_cooling"))
+
+st.subheader("🌀 Cabin cooling")
+if cooling_on and not manual_cooling:
+    st.info("🌀 Cooling is running as part of the **automatic heat-safety response** "
+            "— it will switch off on its own once the cabin cools.")
+elif manual_cooling:
+    st.success("🌀 **Cooling is ON.** The cabin is being pre-cooled — windows stay up.")
+    if st.button("⏹️ Turn off cooling", use_container_width=True):
+        mqtt_client.publish("sentinel/command/cooling",
+                            json.dumps({"command": "stop_cooling"}))
+        st.toast("Turning cooling off…")
+        print("[Dashboard] Stop-cooling command published")
+elif damage:
+    st.caption("Cooling is unavailable while a security alarm is active.")
+else:
+    st.caption("Pre-cool the cabin any time so it's ready to drive — windows stay up.")
+    if st.button("🌀 Turn on cooling system", type="primary", use_container_width=True):
+        mqtt_client.publish("sentinel/command/cooling",
+                            json.dumps({"command": "engage_cooling"}))
+        st.toast("Cooling command sent to coordinator")
+        print("[Dashboard] Manual cooling command published")
+st.divider()
+
+# ══════════════════════════════════════════════════════════════
 # 2) CURRENT ENVIRONMENT STATE
 # ══════════════════════════════════════════════════════════════
 st.subheader("📊 Current environment")
