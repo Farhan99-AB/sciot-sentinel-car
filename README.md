@@ -1,4 +1,4 @@
-# 🚗 Sentinel Car — Smart Parking Damage & Heatstroke Detection (IoT)
+# Sentinel Car — Smart Parking Damage & Heatstroke Detection (IoT)
 
 An autonomous IoT safety system for a parked vehicle. A single Z-Wave sensor kit
 watches the car; a Raspberry Pi runs the "brain" that senses conditions, **plans a
@@ -365,7 +365,7 @@ dashboard alert log — enough to demonstrate the logic even with zero setup.
 
 ---
 
-## 11. Design notes / lessons (useful when explaining the code)
+## 11. Design notes / lessons
 
 - **Topic whitelist, not blacklist.** Filtering incoming topics by substring is
   fragile — `"status"` matched `Cover_status`/`Motion_sensor_status`. The fix was an
