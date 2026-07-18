@@ -377,4 +377,3 @@ dashboard alert log — enough to demonstrate the logic even with zero setup.
 - **Separation of concerns.** The dashboard never decides anything — all logic lives
   in the coordinator, so the UI can crash/restart without affecting safety.
 - **Secrets via environment variables.** Credentials are never written into source.
-```
