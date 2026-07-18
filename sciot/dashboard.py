@@ -315,11 +315,11 @@ with st.sidebar:
         st.toast("Disarm signal sent to coordinator")
         print("[Dashboard] Disarm command published")
 
-    if st.button("🔄 Sync sensors", use_container_width=True):
-        # Ask the coordinator to re-send state and request fresh sensor readings
-        mqtt_client.publish("sentinel/command/poll", json.dumps({"command": "request_state"}))
-        st.toast("Sync requested — fetching latest readings")
-        print("[Dashboard] Sync/poll command published")
+    # if st.button("🔄 Sync sensors", use_container_width=True):
+    #     # Ask the coordinator to re-send state and request fresh sensor readings
+    #     mqtt_client.publish("sentinel/command/poll", json.dumps({"command": "request_state"}))
+    #     st.toast("Sync requested — fetching latest readings")
+    #     print("[Dashboard] Sync/poll command published")
 
     if st.button("🧹 Clear alert & history logs", use_container_width=True):
         st.session_state.alerts = []
