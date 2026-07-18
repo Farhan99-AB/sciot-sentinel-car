@@ -306,7 +306,7 @@ python3 simulate_sensors.py --scenario clear       # temp/UV back to normal
 python3 simulate_sensors.py --scenario disarm      # force reset to IDLE
 ```
 
-**Demo flow to show a professor:**
+**Demo flow:**
 1. `--scenario damage` → dashboard shows TRIGGERED → RESPONDING, banner red, buzzer
    latched, photo captured. It **stays** in RESPONDING.
 2. Press **Disarm / reset** → buzzer off, banner green, state reset.
