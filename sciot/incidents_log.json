@@ -1,8 +1,8 @@
 [
   {
-    "timestamp": "2026-07-14T01:59:22.104624",
+    "timestamp": "2026-07-15T00:33:30.964536",
     "scenario": "damage_or_intrusion",
-    "temperature": 25.2,
+    "temperature": null,
     "occupant_detected": false,
     "plan_steps": 3,
     "plan": [
@@ -12,7 +12,381 @@
     ]
   },
   {
-    "timestamp": "2026-07-14T02:00:13.025394",
+    "timestamp": "2026-07-15T00:34:31.170004",
+    "scenario": "damage_or_intrusion",
+    "temperature": null,
+    "occupant_detected": false,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T00:35:01.435841",
+    "scenario": "damage_or_intrusion",
+    "temperature": null,
+    "occupant_detected": false,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T00:35:30.362911",
+    "scenario": "damage_or_intrusion",
+    "temperature": null,
+    "occupant_detected": false,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T00:38:02.101936",
+    "scenario": "damage_or_intrusion",
+    "temperature": 26.3,
+    "occupant_detected": false,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T00:42:07.758414",
+    "scenario": "heatstroke_risk",
+    "temperature": 35.3,
+    "occupant_detected": true,
+    "plan_steps": 4,
+    "plan": [
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T00:42:47.824807",
+    "scenario": "heatstroke_risk",
+    "temperature": 38.2,
+    "occupant_detected": true,
+    "plan_steps": 4,
+    "plan": [
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T00:43:28.007527",
+    "scenario": "heatstroke_risk",
+    "temperature": 39.2,
+    "occupant_detected": true,
+    "plan_steps": 4,
+    "plan": [
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T00:44:08.128755",
+    "scenario": "heatstroke_risk",
+    "temperature": 39,
+    "occupant_detected": true,
+    "plan_steps": 4,
+    "plan": [
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T00:50:43.387210",
+    "scenario": "damage_or_intrusion",
+    "temperature": 33.3,
+    "occupant_detected": true,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T00:56:10.554575",
+    "scenario": "damage_or_intrusion",
+    "temperature": 33.2,
+    "occupant_detected": false,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T00:57:03.045763",
+    "scenario": "high_cabin_temp_alert",
+    "temperature": 35.2,
+    "occupant_detected": false,
+    "plan_steps": 1,
+    "plan": [
+      "send-cabin-heat-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T23:53:23.535571",
+    "scenario": "damage_or_intrusion",
+    "temperature": 23.9,
+    "occupant_detected": true,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T23:54:44.639140",
+    "scenario": "damage_or_intrusion",
+    "temperature": 24.3,
+    "occupant_detected": false,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T23:58:48.068675",
+    "scenario": "damage_or_intrusion",
+    "temperature": 25.1,
+    "occupant_detected": true,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-15T23:59:24.614462",
+    "scenario": "damage_or_intrusion",
+    "temperature": null,
+    "occupant_detected": false,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:00:35.174390",
+    "scenario": "damage_or_intrusion",
+    "temperature": 25.4,
+    "occupant_detected": false,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:13:01.256354",
+    "scenario": "damage_or_intrusion",
+    "temperature": 26.5,
+    "occupant_detected": false,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:14:50.437372",
+    "scenario": "damage_or_intrusion",
+    "temperature": null,
+    "occupant_detected": false,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:15:41.761956",
+    "scenario": "damage_or_intrusion",
+    "temperature": 26.6,
+    "occupant_detected": false,
+    "plan_steps": 3,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:29:03.837015",
+    "scenario": "high_cabin_temp_alert",
+    "temperature": 35.6,
+    "occupant_detected": false,
+    "plan_steps": 1,
+    "plan": [
+      "send-cabin-heat-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:29:11.111958",
+    "scenario": "heatstroke_risk",
+    "temperature": 35.6,
+    "occupant_detected": true,
+    "plan_steps": 4,
+    "plan": [
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:30:03.947377",
+    "scenario": "heatstroke_risk",
+    "temperature": 37.4,
+    "occupant_detected": true,
+    "plan_steps": 4,
+    "plan": [
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:30:44.105919",
+    "scenario": "heatstroke_risk",
+    "temperature": 38.5,
+    "occupant_detected": true,
+    "plan_steps": 4,
+    "plan": [
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:31:04.158772",
+    "scenario": "damage_or_intrusion",
+    "temperature": 39,
+    "occupant_detected": true,
+    "plan_steps": 7,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1",
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:35:45.056043",
+    "scenario": "high_cabin_temp_alert",
+    "temperature": 43.5,
+    "occupant_detected": false,
+    "plan_steps": 1,
+    "plan": [
+      "send-cabin-heat-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:36:25.159780",
+    "scenario": "high_cabin_temp_alert",
+    "temperature": 43.9,
+    "occupant_detected": false,
+    "plan_steps": 1,
+    "plan": [
+      "send-cabin-heat-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:36:45.205112",
+    "scenario": "damage_or_intrusion",
+    "temperature": 43.7,
+    "occupant_detected": false,
+    "plan_steps": 4,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1",
+      "send-cabin-heat-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:37:25.348566",
+    "scenario": "high_cabin_temp_alert",
+    "temperature": 43.1,
+    "occupant_detected": false,
+    "plan_steps": 1,
+    "plan": [
+      "send-cabin-heat-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:37:39.197143",
+    "scenario": "heatstroke_risk",
+    "temperature": 43.1,
+    "occupant_detected": true,
+    "plan_steps": 4,
+    "plan": [
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:38:25.514867",
+    "scenario": "heatstroke_risk",
+    "temperature": 42,
+    "occupant_detected": true,
+    "plan_steps": 4,
+    "plan": [
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:45:33.028731",
+    "scenario": "high_cabin_temp_alert",
+    "temperature": 35,
+    "occupant_detected": false,
+    "plan_steps": 1,
+    "plan": [
+      "send-cabin-heat-alert car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:46:39.484826",
     "scenario": "heatstroke_risk",
     "temperature": 35,
     "occupant_detected": true,
@@ -25,13 +399,48 @@
     ]
   },
   {
-    "timestamp": "2026-07-14T02:01:06.491054",
-    "scenario": "high_cabin_temp_alert",
-    "temperature": 35,
-    "occupant_detected": false,
-    "plan_steps": 1,
+    "timestamp": "2026-07-16T00:46:47.994722",
+    "scenario": "damage_or_intrusion",
+    "temperature": 39,
+    "occupant_detected": true,
+    "plan_steps": 7,
     "plan": [
-      "send-cabin-heat-alert car1"
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1",
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:50:02.664311",
+    "scenario": "heatstroke_risk",
+    "temperature": 35,
+    "occupant_detected": true,
+    "plan_steps": 4,
+    "plan": [
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
+    ]
+  },
+  {
+    "timestamp": "2026-07-16T00:50:11.130313",
+    "scenario": "damage_or_intrusion",
+    "temperature": 39,
+    "occupant_detected": true,
+    "plan_steps": 7,
+    "plan": [
+      "activate-damage-alarm car1",
+      "capture-damage-evidence car1",
+      "send-damage-alert car1",
+      "detect-occupant-heat-risk car1",
+      "engage-cooling car1",
+      "roll-down-windows car1",
+      "confirm-occupant-safe car1"
     ]
   }
 ]

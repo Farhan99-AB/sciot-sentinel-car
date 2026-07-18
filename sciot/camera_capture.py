@@ -1,6 +1,6 @@
 # camera_capture.py — v3
 # ── Change this one line to switch camera source ─────────────
-CAMERA_SOURCE = "ipcam"   # options: "ipcam" | "usb" | "picamera2" | "libcamera"
+CAMERA_SOURCE = "usb"   # options: "ipcam" | "usb" | "picamera2" | "libcamera"
 IPCAM_SNAPSHOT_URL = "http://192.168.1.97:9090/shot.jpg"  # IP Webcam app URL
 # ─────────────────────────────────────────────────────────────
 
@@ -11,6 +11,19 @@ from pathlib import Path
 
 PHOTO_DIR = Path("/home/sciot/zwave_ui/evidence")
 PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+
+
+import atexit
+
+@atexit.register
+def _release_usb_cam():
+    global _usb_cam
+    if _usb_cam is not None:
+        try:
+            _usb_cam.release()
+        except Exception:
+            pass
+        _usb_cam = None
 
 
 def capture_photo(reason: str = "event") -> str | None:
@@ -67,26 +80,64 @@ def _try_ipcam(filepath: str) -> bool:
         return False
 
 
+USB_CAM_INDEX  = 0       # /dev/video0
+USB_CAM_WIDTH  = 640
+USB_CAM_HEIGHT = 480
+KEEP_CAM_WARM  = False    # hold the device open between captures for fast repeat shots
+_usb_cam = None          # cached VideoCapture when KEEP_CAM_WARM is on
+
+
+def _open_usb_cam():
+    """Open /dev/video0 with the fast V4L2 backend + MJPG, buffer minimised."""
+    import cv2
+    cap = cv2.VideoCapture(USB_CAM_INDEX, cv2.CAP_V4L2)  # V4L2 > GStreamer for USB cams
+    if not cap.isOpened():
+        return None
+    cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))  # compressed = faster
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,  USB_CAM_WIDTH)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, USB_CAM_HEIGHT)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)   # don't hand us a stale buffered frame
+    return cap
+
+
 def _try_opencv(filepath: str) -> bool:
     """USB webcam via OpenCV — device index 0 (first connected USB cam)."""
+    global _usb_cam
     try:
         import cv2
-        print("[Camera] Trying USB webcam (OpenCV /dev/video0)")
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
+        print("[Camera] Trying USB webcam (OpenCV V4L2 /dev/video0)")
+
+        cap = _usb_cam if (KEEP_CAM_WARM and _usb_cam is not None) else _open_usb_cam()
+        if cap is None or not cap.isOpened():
             print("[Camera] No USB webcam found at index 0")
             return False
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH,  1280)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-        time.sleep(0.8)   # let auto-exposure settle
+
+        warm = KEEP_CAM_WARM and _usb_cam is not None
+        # Flush a couple of frames so auto-exposure/white-balance has settled.
+        # A warm handle only needs a token flush; a freshly opened one needs a few.
+        for _ in range(1 if warm else 4):
+            cap.read()
+
         ret, frame = cap.read()
-        cap.release()
-        if ret:
+
+        if KEEP_CAM_WARM:
+            _usb_cam = cap            # keep it open for the next shot
+        else:
+            cap.release()
+
+        if ret and frame is not None:
             cv2.imwrite(filepath, frame)
             return True
         return False
     except Exception as e:
         print(f"[Camera] OpenCV failed: {e}")
+        # A cached handle may have gone bad (unplugged) — drop it so we reopen next time.
+        if _usb_cam is not None:
+            try:
+                _usb_cam.release()
+            except Exception:
+                pass
+            _usb_cam = None
         return False
 
 

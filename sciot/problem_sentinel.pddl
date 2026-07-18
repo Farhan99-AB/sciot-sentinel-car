@@ -3,7 +3,14 @@
   (:objects car1 - vehicle)
   (:init
         (parked car1)
+    (damage-signal car1)
+    (occupant-detected car1)
     (cabin-too-hot car1)
   )
-  (:goal (cabin-secure car1))
+  (:goal (and
+        (vehicle-secure car1)
+        (occupant-safe car1)
+        (cooling-engaged car1)
+        (windows-down car1)
+    ))
 )

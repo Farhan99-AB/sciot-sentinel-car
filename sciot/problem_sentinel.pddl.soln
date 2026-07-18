@@ -1,1 +1,7 @@
-(send-cabin-heat-alert car1)
+(activate-damage-alarm car1)
+(capture-damage-evidence car1)
+(send-damage-alert car1)
+(detect-occupant-heat-risk car1)
+(engage-cooling car1)
+(roll-down-windows car1)
+(confirm-occupant-safe car1)

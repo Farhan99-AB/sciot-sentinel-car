@@ -304,6 +304,7 @@ def on_message(client, userdata, message):
         return
 
     changed = False
+    damage_just_tripped = False
 
     # ── 1. DAMAGE DETECTION — Cover/tamper sensor ONLY ──────────
     if topic == TOPIC_CAR_TAMPER:
@@ -312,6 +313,7 @@ def on_message(client, userdata, message):
             sensor_state["damage_signal"] = True
             transition("TRIGGERED", client)
             changed = True
+            damage_just_tripped = True
         else:
             print(f"[DEBUG] Cover status = {value} (no change)")
 
@@ -361,9 +363,18 @@ def on_message(client, userdata, message):
 
     if changed:
         client.publish("sentinel/state", json.dumps(sensor_state), retain=True)
+        
+        # ── HIGHEST PRIORITY: a fresh physical-damage detection ───
+        # A break-in latches the security response and must NEVER be swallowed by
+        # the plan cooldown or by an already-latched heat/UV alert. Force a plan
+        # immediately, whatever state we're in. If the cabin is also hot with an
+        # occupant, both flags are now set, so this single forced cycle produces a
+        # compound plan (secure the vehicle AND cool/vent for the occupant).
+        if damage_just_tripped:
+            trigger_planning(client, force=True)
         # Only START a response from a resting state — never re-plan while a
         # response is already latched in RESPONDING.
-        if system_fsm["state"] in ("IDLE", "TRIGGERED"):
+        elif system_fsm["state"] in ("IDLE", "TRIGGERED"):
             needs_plan = (
                 sensor_state["damage_signal"] or
                 sensor_state["cabin_too_hot"] or   # hot cabin alerts even with no occupant

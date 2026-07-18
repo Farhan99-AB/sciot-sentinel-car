@@ -15,6 +15,7 @@
 #   python3 simulate_sensors.py --scenario hot_empty    # rising heat, no occupant
 #   python3 simulate_sensors.py --scenario uv
 #   python3 simulate_sensors.py --scenario damage
+#   python3 simulate_sensors.py --scenario hot_damage  # occupant + heat + break-in
 #   python3 simulate_sensors.py --scenario clear
 #   python3 simulate_sensors.py --scenario disarm
 #
@@ -59,6 +60,17 @@ def build_messages(scenario):
                 motion_on]
     if scenario == "damage":
         return [(TOPIC_CAR_TAMPER, {"value": TAMPER_ACTIVE})]
+    if scenario == "hot_damage":
+        # Occupant trapped in a heating cabin, THEN a physical impact/break-in on
+        # top. The coordinator plans the heat response first, then the fresh damage
+        # signal forces a re-plan with both conditions set — one compound plan that
+        # both secures the vehicle AND cools/vents for the occupant.
+        msgs = [motion_on]                                   # occupant enters first
+        for t in _heat_ramp():
+            msgs.append((TOPIC_CAR_TEMP, {"value": t}))
+        msgs.append(motion_on)                               # re-assert occupant
+        msgs.append((TOPIC_CAR_TAMPER, {"value": TAMPER_ACTIVE}))  # impact/break-in
+        return msgs
     if scenario == "clear":
         return [(TOPIC_CAR_TEMP, {"value": 24.0}),
                 (TOPIC_CAR_UV, {"value": 0}),
@@ -74,6 +86,7 @@ SCENARIOS = {
     "hot_empty":  "Cabin temperature rising, NO occupant → alert-only",
     "uv":         "Occupant inside + UV rising past the threshold",
     "damage":     "Physical damage / tamper on the cover sensor",
+    "hot_damage":  "Occupant + rising heat AND a break-in → compound secure + cool plan",
     "clear":      "Reset all readings to safe values",
     "disarm":     "Force the system to disarm and return to IDLE",
 }
