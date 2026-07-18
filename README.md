@@ -243,10 +243,6 @@ pipeline without touching the car. Scenarios: `damage`, `heatstroke`, `uv`, `cle
 A self-contained script (no GPIO/camera/MQTT) to verify the notification pipeline on
 any machine. See §10.
 
-### Files you can ignore for grading
-`network_test.py` and `test_queue_persistency.py` are scratch utilities not part of
-the main flow.
-
 ---
 
 ## 7. MQTT topic reference
