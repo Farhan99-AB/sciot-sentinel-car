@@ -1,4 +1,4 @@
-# Sentinel Car — Parked Damage Detection | Temperature Monitoring and Regulation (Smart IoT)
+# Sentinel Car - Parked Damage Detection | Temperature Monitoring and Regulation (Smart IoT)
 
 An autonomous IoT safety system for a parked vehicle. 
 
