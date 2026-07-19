@@ -8,7 +8,7 @@ camera, SMS), and streams everything to a live web dashboard.
 
 It solves two problems:
 
-1. **Temperate Montitoring and Regulation** — detects sudden changes in temperature and regulates it for a comfortable temperature. It can also detect a    dangerous cabin temperature > 35 degree celsius *while an occupant is inside* and engages cooling + sends an alert.
+1. **Temperate Montitoring and Regulation** — detects sudden changes in temperature and regulates it for a comfortable temperature. It can also detect a    dangerous cabin temperature (heatstroke) > 35 degree celsius *while an occupant is inside* and engages cooling + sends an alert.
 2. **Damage or Intrusion Detection** — detects a physical impact/tamper on the car,
    sounds an alarm, captures a photo as evidence, and sends an alert.
 
