@@ -291,12 +291,12 @@ Install raspberry pi OS on the pi. It also works with lite version.
 
 **On the Raspberry Pi** (broker + zwave-js-ui already running):
 ```bash
-python3 main_coordinator.py      # start the brain
+python3 main_coordinator.py
 ```
 
 **On your laptop:**
 ```bash
-streamlit run dashboard.py       # open the live dashboard
+streamlit run dashboard.py      # live dashboard
 ```
 
 **Testing without the car** (run on the Pi, in another terminal):
