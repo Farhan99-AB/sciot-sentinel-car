@@ -1,15 +1,15 @@
-# Sentinel Car — Smart Parking Damage & Heatstroke Detection (IoT)
+# Sentinel Car — Parked Damage Detection | Temperature Monitoring and Regulation (Smart IoT)
 
-An autonomous IoT safety system for a parked vehicle. A single Z-Wave sensor kit
-watches the car; a Raspberry Pi runs the "brain" that senses conditions, **plans a
+An autonomous IoT safety system for a parked vehicle. 
+
+A Z-Wave sensor kit watches the car, a Raspberry Pi is the main coordinator that senses conditions, **plans a
 response with an AI planner**, drives the physical actuators (buzzer, cooling relay,
 camera, SMS), and streams everything to a live web dashboard.
 
 It solves two problems:
 
-1. **Heatstroke prevention** — detects a dangerous cabin temperature *while an
-   occupant is inside* and engages cooling + sends an alert.
-2. **Damage / intrusion detection** — detects a physical impact/tamper on the car,
+1. **Temperate Montitoring and Regulation** — detects sudden changes in temperature and regulates it for a comfortable temperature. It can also detect a    dangerous cabin temperature > 35 degree celsius *while an occupant is inside* and engages cooling + sends an alert.
+2. **Damage or Intrusion Detection** — detects a physical impact/tamper on the car,
    sounds an alarm, captures a photo as evidence, and sends an alert.
 
 ---
@@ -34,7 +34,7 @@ It solves two problems:
                                                                                  └─────────────┘
 ```
 
-**In plain words:** the sensor reports readings → the Pi decides if there's a threat
+**Simple explanation:** the sensor reports readings → the Pi decides if there's a threat
 → if so it asks an AI planner for the correct sequence of steps → it performs those
 steps on real hardware → and it publishes the whole story (sensor state, system
 state, plan progress, evidence, alerts) over MQTT so the dashboard can show it live.
@@ -54,7 +54,7 @@ reach a goal. This is the academically interesting part:
   `capture-damage-evidence` before `activate-damage-alarm` because the planner's
   preconditions forbid it).
 
-We use **STRIPS** planning via **pyperplan**.
+We use **STRIPS (STanford Research Institute Problem Solver)** planning via [**pyperplan**](https://github.com/aibasel/pyperplan).
 
 ---
 
@@ -154,7 +154,7 @@ by itself. This is why the alarm doesn't just blink and vanish.
 
 ---
 
-## 6. File-by-file explanation
+## 6. File Description
 
 ### `main_coordinator.py` — the brain
 The central program that runs on the Pi. It:
@@ -280,12 +280,14 @@ any machine. See §10.
 | `MQTT_HOST` / `MQTT_PORT` | 127.0.0.1 : 1883 | broker (Pi-local for coordinator) |
 | `ZWAVE_GATEWAY_NAME`, `CAR_NODE_ID` | `None` | optional: enables active value-refresh on Sync/Disarm |
 
-> The dashboard has its own `MQTT_HOST = 100.74.16.98` (the Pi's Tailscale IP)
+> The dashboard has its own `MQTT_HOST = 100.74.16.98` (the Pi's IP)
 > because it runs on a different machine.
 
 ---
 
-## 9. Running it
+## 9. How to run
+
+Install raspberry pi OS on the pi. It also works with lite version. 
 
 **On the Raspberry Pi** (broker + zwave-js-ui already running):
 ```bash
