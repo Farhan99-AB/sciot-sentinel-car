@@ -31,7 +31,7 @@ from camera_capture import capture_photo
 #
 # Set with:  export SENTINEL_NOTIFY=ntfy   (Linux/Pi)
 # ══════════════════════════════════════════════════════════════
-NOTIFY_METHOD = os.getenv("SENTINEL_NOTIFY", "console").lower()
+NOTIFY_METHOD = os.getenv("SENTINEL_NOTIFY", "Twilio").lower()
 
 # --- Email / email-to-SMS settings (used when NOTIFY_METHOD == "email") ---
 # For Gmail: enable 2FA, then create an "App Password" and use it as SMTP_PASS.

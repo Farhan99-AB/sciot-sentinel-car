@@ -35,7 +35,10 @@ import os
 # ══════════════════════════════════════════════════════════════
 st.set_page_config(page_title="Sentinel Car", page_icon="🚗", layout="wide")
 
-MQTT_HOST = "100.74.16.98"          # Pi's Tailscale IP (dashboard runs on the laptop)
+# MQTT_HOST = "100.74.16.98"         # Pi's Tailscale IP (dashboard runs on the laptop)
+# MQTT_HOST = "192.168.137.9"        # Pi's IP with laptop 
+# MQTT_HOST = "10.46.69.130"         # Pi's IP with mobile (Yuvan)
+MQTT_HOST = "10.82.208.130"          # Pi's IP with mobile (Ganesh)
 MQTT_PORT = 1883
 LOCAL_LOG_FILE = "dashboard_incidents.json"
 EVIDENCE_DIR   = "dashboard_evidence"          # saved damage photos, linked into history
@@ -92,7 +95,8 @@ def get_queue():
 
 def on_connect(client, userdata, flags, rc, props):
     for topic in ("sentinel/state", "sentinel/fsm_state", "sentinel/plan",
-                  "sentinel/current_step", "sentinel/evidence", "sentinel/alert"):
+                  "sentinel/current_step", "sentinel/evidence", "sentinel/alert",
+                  "sentinel/sensor_status"):
         client.subscribe(topic)
     print(f"[Dashboard MQTT] connected rc={rc}, subscribed to sentinel/#")
 
@@ -130,6 +134,7 @@ defaults = {
     "last_update": None,
     "incident_history": [],
     "history_loaded": False,
+    "sensor_status": {"alive": True, "status": "Checking…", "timestamp": None},
 }
 for k, v in defaults.items():
     st.session_state.setdefault(k, v)
@@ -226,6 +231,10 @@ while not q.empty():
         st.session_state.alerts.insert(0, data)
         st.session_state.alerts = st.session_state.alerts[:20]
         print(f"[Dashboard] alert <- {data.get('event')}")
+    
+    elif topic == "sentinel/sensor_status":
+        st.session_state.sensor_status = data
+        print(f"[Dashboard] sensor_status <- alive={data.get('alive')}")
 
 # ══════════════════════════════════════════════════════════════
 # Helpers
@@ -340,6 +349,13 @@ with st.sidebar:
 # ══════════════════════════════════════════════════════════════
 st.title("🚗 Sentinel Car Dashboard")
 
+# ── Sensor connectivity warning ───────────────────────────────
+sensor_ok = st.session_state.sensor_status.get("alive", True)
+if not sensor_ok:
+    last_check = st.session_state.sensor_status.get("timestamp", "unknown")[:19]
+    st.error(f"⚠️ **Sensors disconnected** — last ping: {last_check}. "
+             f"Dashboard is showing the last known readings.")
+
 # ── Overall status banner ──────────────────────────────────────
 # Stays RED/YELLOW for the whole duration of an alert (while any alarm flag is
 # set OR the system is actively triggered/responding). Only turns GREEN once the
@@ -401,11 +417,11 @@ elif st.session_state.plan:
         if status == "complete":
             # The plan has run but the response stays LATCHED (actuators on).
             if "high_cabin_temp" in scenario:
-                st.warning("🌡️ High cabin temperature alert sent — holding until the cabin cools down.")
+                st.warning("🌡️ High cabin temperature alert sent")
             elif "heatstroke" in scenario:
                 st.warning("🌡️ Cooling relay engaged & alert sent — holding until the cabin cools down.")
             elif "uv" in scenario:
-                st.warning("☀️ UV warning sent — holding until UV drops.")
+                st.warning("☀️ UV warning sent.")
             else:
                 st.error("🔔 Alarm active — evidence captured & alert sent. "
                          "Press **Disarm / reset** to silence.")

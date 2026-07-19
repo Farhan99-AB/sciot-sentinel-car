@@ -8,6 +8,7 @@
 #
 # Pipeline: sensor -> MQTT -> this file -> PDDL planner -> actuators
 
+import threading
 import paho.mqtt.client as mqtt
 import json
 import time
@@ -63,6 +64,16 @@ HANDLED_TOPICS = {
 last_plan_time = 0
 PLAN_COOLDOWN  = 15   # seconds between planning cycles, prevents alert spam
 
+# ── Sensor health monitoring (ping-based) ─────────────────────
+# Pings the Z-Wave sensor every N seconds via Z-Wave JS UI's pingNode API.
+# Change PING_INTERVAL_S to adjust frequency (30s default, sensor reports every 10s).
+PING_INTERVAL_S = 30
+
+def _periodic_ping(client):
+    """Ping the Z-Wave sensor and schedule the next ping."""
+    client.publish(TOPIC_PING_REQUEST, json.dumps({"args": [CAR_NODE_ID]}))
+    print(f"[PING] Pinging node {CAR_NODE_ID}")
+    threading.Timer(PING_INTERVAL_S, _periodic_ping, args=(client,)).start()
 
 def any_alarm_active() -> bool:
     """True while any latching alarm condition holds. Damage latches until a
@@ -172,7 +183,7 @@ def trigger_planning(client, force: bool = False):
     # Show TRIGGERED first (the detection moment), briefly, so the dashboard can
     # display it, then move into RESPONDING for the actual actuator plan.
     transition("TRIGGERED", client)
-    time.sleep(1.5)
+    # time.sleep(1.5)
     transition("RESPONDING", client)
 
     generate_problem(
@@ -225,7 +236,7 @@ def trigger_planning(client, force: bool = False):
             cooling_watch["engaged_at"] = time.time()
             print(f"[Coordinator] Cooling engaged — watching for {COOLING_FAILSAFE_SECONDS}s")
 
-        time.sleep(1.5)   # small pause so each step is visible on the dashboard
+        # time.sleep(1.5)   # small pause so each step is visible on the dashboard
 
     client.publish("sentinel/current_step", json.dumps({
         "step": len(plan), "total": len(plan), "action": plan[-1],
@@ -285,6 +296,23 @@ def on_message(client, userdata, message):
         client.publish("sentinel/state", json.dumps(sensor_state), retain=True)
         client.publish("sentinel/fsm_state", json.dumps({"state": system_fsm["state"]}))
         request_sensor_refresh(client)   # also ask the device for fresh readings
+        return
+    
+    # ── Z-Wave ping response ────────────────────────────────────
+    if topic == TOPIC_PING_RESPONSE:
+        try:
+            data = json.loads(payload_str)
+            success = data.get("result", False)    # flat, not nested
+        except Exception:
+            success = False
+        status = "Alive" if success else "Dead"
+        print(f"[PING] Node {CAR_NODE_ID}: {status}")
+        client.publish("sentinel/sensor_status", json.dumps({
+            "alive": success,
+            "status": status,
+            "timestamp": str(datetime.now()),
+            "source": "ping"
+        }))
         return
 
     # ── Only our four sensor topics matter; ignore everything else ──
@@ -424,4 +452,6 @@ if __name__ == "__main__":
     client.on_connect = on_connect
     client.on_message = on_message
     client.connect(MQTT_HOST, MQTT_PORT, 60)
+    # Start periodic sensor health pings (change PING_INTERVAL_S above)
+    _periodic_ping(client)
     client.loop_forever()

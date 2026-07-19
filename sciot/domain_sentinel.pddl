@@ -98,7 +98,7 @@
   ; this + the alert-only action as a cheap 3-step shortcut for a HEAT occupant
   ; and skip cooling/windows. Keeping it UV-specific forces the heat case through
   ; engage-cooling + roll-down-windows.
-  (:action confirm-safe-after-uv-alert
+  (:action confirm-occupant-safe-after-uv-alert
     :parameters (?v - vehicle)
     :precondition (and (occupant-at-risk ?v) (cabin-uv-high ?v) (alert-sent ?v))
     :effect (occupant-safe ?v)
