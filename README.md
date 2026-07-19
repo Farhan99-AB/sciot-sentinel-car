@@ -103,7 +103,7 @@ vars above; override the bus or address with `SENTINEL_RELAY_BUS` / `SENTINEL_RE
 
 ---
 
-## 4. The sensor → logic mapping (core design decision)
+## 4. The sensor → logic mapping
 
 Each physical signal drives exactly one responsibility. This separation is
 deliberate and was the main correctness requirement:
@@ -154,7 +154,7 @@ by itself. This is why the alarm doesn't just blink and vanish.
 
 ---
 
-## 6. File Description
+## 6. Code Explanation
 
 ### `main_coordinator.py` — the brain
 The central program that runs on the Pi. It:
@@ -285,7 +285,7 @@ any machine. See §10.
 
 ---
 
-## 9. How to run
+## 9. How to run the project
 
 Install raspberry pi OS on the pi. It also works with lite version. 
 
